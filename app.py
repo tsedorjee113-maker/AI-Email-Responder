@@ -1,17 +1,24 @@
-import streamlit as st
 import os
 import json
 import base64
+import streamlit as st
 from dotenv import load_dotenv
 from google import genai
 from streamlit_oauth import OAuth2Component
 
+# Load local .env variables if present
 load_dotenv()
 
-# Environment Credentials
-default_api_key = os.getenv("GEMINI_API_KEY")
-CLIENT_ID = os.getenv("GOOGLE_CLIENT_ID")
-CLIENT_SECRET = os.getenv("GOOGLE_CLIENT_SECRET")
+# Helper function to read secrets from Streamlit Cloud or local .env
+def get_secret(key_name):
+    if key_name in st.secrets:
+        return st.secrets[key_name]
+    return os.getenv(key_name)
+
+# Retrieve Environment Credentials
+default_api_key = get_secret("GEMINI_API_KEY")
+CLIENT_ID = get_secret("GOOGLE_CLIENT_ID")
+CLIENT_SECRET = get_secret("GOOGLE_CLIENT_SECRET")
 
 # Google OAuth Endpoints
 AUTHORIZE_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
@@ -21,10 +28,14 @@ REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
 st.set_page_config(page_title="AI Email Assistant", page_icon="✉️", layout="wide")
 
 # ---------------------------------------------------------
-# Sidebar / Authentication
+# Sidebar / Configuration & Authentication
 # ---------------------------------------------------------
 st.sidebar.header("🔑 Configuration")
-user_api_key = st.sidebar.text_input("Gemini API Key", value=default_api_key or "", type="password")
+user_api_key = st.sidebar.text_input(
+    "Gemini API Key", 
+    value=default_api_key or "", 
+    type="password"
+)
 
 st.sidebar.markdown("---")
 st.sidebar.header("👤 Authentication")
@@ -42,10 +53,14 @@ if CLIENT_ID and CLIENT_SECRET:
     if "user_email" not in st.session_state:
         st.sidebar.info("Log in to unlock Inbox Smart Replies.")
         
+        # Determine redirect URI dynamically based on environment
+        # Uses production URL on Streamlit Cloud, falls back to localhost locally
+        redirect_uri = os.getenv("REDIRECT_URI", "https://email-responder-ai.streamlit.app/")
+        
         try:
             result = oauth2.authorize_button(
                 name="Continue with Google",
-                redirect_uri="http://localhost:8501",
+                redirect_uri=redirect_uri,
                 scope="openid email profile",
                 key="google_oauth"
             )
@@ -61,10 +76,8 @@ if CLIENT_ID and CLIENT_SECRET:
                 st.rerun()
 
         except Exception as e:
-            # Handle state mismatch gracefully
             st.sidebar.warning("Session expired or state mismatched. Please click below to sign in again.")
             if st.sidebar.button("Retry Google Sign-In"):
-                # Clear query parameters to reset the OAuth URL state
                 st.query_params.clear()
                 st.rerun()
 
@@ -75,13 +88,13 @@ if CLIENT_ID and CLIENT_SECRET:
             st.query_params.clear()
             st.rerun()
 else:
-    st.sidebar.warning("Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in .env for OAuth.")
+    st.sidebar.warning("Configure GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET in Secrets/.env for OAuth.")
 
 # ---------------------------------------------------------
-# Helper Function for Gemini
+# Helper Function for Gemini API Calls
 # ---------------------------------------------------------
 def call_gemini(prompt_text, key):
-    client = genai.Client(api_key=key)
+    client = genai.Client(api_key=key.strip())
     response = client.models.generate_content(
         model="gemini-2.5-flash",
         contents=prompt_text,
@@ -114,7 +127,7 @@ if not is_logged_in:
         
     with col2:
         st.subheader("📄 Generated Email Output")
-        if st.button("Generate Email Draft", use_container_width=True):
+        if st.button("Generate Email Draft", use_container_width=True, type="primary"):
             if not intent_instruction:
                 st.warning("Please type a short instruction first!")
             elif not user_api_key:
@@ -133,6 +146,8 @@ if not is_logged_in:
                     try:
                         draft = call_gemini(prompt, user_api_key)
                         st.text_area("Ready-to-Send Email", value=draft, height=280)
+                        st.code(draft, language="text")
+                        st.caption("💡 Click the copy icon in the top right of the code box above to quickly copy your draft.")
                     except Exception as e:
                         st.error(f"Gemini API Error: {e}")
 
@@ -155,14 +170,14 @@ else:
         st.subheader("💡 Your Quick Reply Hint")
         reply_hint = st.text_input(
             "How do you want to respond?", 
-            placeholder="e.g., Say him that we will meet this Friday at 2 PM."
+            placeholder="e.g., Tell them we can meet this Friday at 2 PM."
         )
-        
+
     with col2:
         st.subheader("🤖 AI Analysis & Smart Draft")
         response_tone = st.selectbox("Reply Tone", ["Professional", "Friendly", "Concise", "Formal", "Persuasive"])
         
-        if st.button("Analyze & Draft Smart Reply", use_container_width=True):
+        if st.button("Analyze & Draft Smart Reply", use_container_width=True, type="primary"):
             if not incoming_body:
                 st.warning("Please paste the incoming email content first.")
             elif not user_api_key:
@@ -190,5 +205,6 @@ else:
                         ai_output = call_gemini(prompt, user_api_key)
                         st.markdown("### Analysis & Generated Reply:")
                         st.text_area("AI Response Draft", value=ai_output, height=320)
+                        st.code(ai_output, language="text")
                     except Exception as e:
                         st.error(f"Gemini API Error: {e}")
