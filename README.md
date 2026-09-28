@@ -1,34 +1,31 @@
-# ✉️ AI Email Responder
+# ✉️ AI Email Writer & Inbox Smart Reply Assistant
 
-An intelligent, AI-powered web application built with Python, Streamlit, and Google Gemini API that automatically drafts professional, context-aware email responses tailored to your desired tone and length.
-
-🚀 **Live Demo:** [https://email-responder-ai.streamlit.app](https://email-responder-ai.streamlit.app)
+An intelligent, dual-mode AI Email Assistant starter kit built with **Python**, **Streamlit**, **Google Gemini API** (`google-genai`), and **Google OAuth 2.0**.
 
 ---
 
-## 🌟 Key Features
+## 🌟 Features
 
-- **Context-Aware Generation:** Analyzes incoming emails and generates accurate, well-structured replies.
-- **Customizable Tone & Length:** Choose between professional, friendly, formal, or concise output options.
-- **Fast & Responsive UI:** Built using Streamlit for an intuitive user experience.
-- **Secure API Management:** Uses Streamlit Cloud Secrets for safe API key handling without hardcoding credentials.
-
----
-
-## 🛠️ Tech Stack
-
-- **Frontend / UI:** [Streamlit](https://streamlit.io/)
-- **LLM Engine:** [Google Gemini API](https://aistudio.google.com/)
-- **Language:** Python 3.10+
-- **Deployment:** Streamlit Community Cloud
+* **Guest Mode (Quick Email Writer):** Generate complete, professional emails instantly from simple instructions without logging in (e.g., *"Schedule my meeting with Biru this Friday"*).
+* **Logged-In Mode (Google OAuth 2.0):** Authenticate securely with Google to unlock **Inbox Smart Replies**, email context analysis, and guided draft responses.
+* **Tone Controls:** Choose from multiple response tones (*Professional*, *Friendly*, *Concise*, *Formal*, *Persuasive*).
+* **Modern SDK Integration:** Powered by Google's latest `google-genai` SDK (`gemini-2.5-flash`).
 
 ---
 
-## 🚀 Quickstart Guide (Local Setup)
+## 🛠️ Quickstart Guide
 
-To run this project locally on your machine:
+### 1. Clone or Extract Files
+Extract all files from this bundle into a local project folder:
+- `app.py`
+- `requirements.txt`
+- `.env.example`
+- `README.md`
 
-### 1. Clone the Repository
+### 2. Set Up Virtual Environment (Recommended)
 ```bash
-git clone [https://github.com/tsedorjee113-maker/AI-Email-Responder.git](https://github.com/tsedorjee113-maker/AI-Email-Responder.git)
-cd AI-Email-Responder
+python -m venv venv
+# On Windows:
+venv\Scripts\activate
+# On Mac/Linux:
+source venv/bin/activate
