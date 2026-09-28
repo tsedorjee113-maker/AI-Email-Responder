@@ -30,11 +30,15 @@ st.set_page_config(page_title="AI Email Assistant", page_icon="✉️", layout="
 # Sidebar / Configuration & Authentication
 # ---------------------------------------------------------
 st.sidebar.header("🔑 Configuration")
-user_api_key = st.sidebar.text_input(
+user_input_key = st.sidebar.text_input(
     "Gemini API Key", 
-    value=default_api_key or "", 
-    type="password"
+    value="", 
+    type="password",
+    placeholder="Loaded from Secrets (or enter custom key)"
 )
+
+# Priority: User's typed input > Streamlit Secrets / .env
+user_api_key = user_input_key.strip() if user_input_key.strip() else default_api_key
 
 st.sidebar.markdown("---")
 st.sidebar.header("👤 Authentication")
