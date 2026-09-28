@@ -20,10 +20,9 @@ default_api_key = get_secret("GEMINI_API_KEY")
 CLIENT_ID = get_secret("GOOGLE_CLIENT_ID")
 CLIENT_SECRET = get_secret("GOOGLE_CLIENT_SECRET")
 
-# Google OAuth Endpoints
+# Google OAuth Endpoints (Revoke endpoint omitted to prevent httpx_oauth error)
 AUTHORIZE_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth"
 TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token"
-REVOKE_ENDPOINT = "https://oauth2.googleapis.com/revoke"
 
 st.set_page_config(page_title="AI Email Assistant", page_icon="✉️", layout="wide")
 
@@ -46,15 +45,13 @@ if CLIENT_ID and CLIENT_SECRET:
         CLIENT_SECRET, 
         AUTHORIZE_ENDPOINT, 
         TOKEN_ENDPOINT, 
-        TOKEN_ENDPOINT, 
-        REVOKE_ENDPOINT
+        TOKEN_ENDPOINT
     )
 
     if "user_email" not in st.session_state:
         st.sidebar.info("Log in to unlock Inbox Smart Replies.")
         
         # Determine redirect URI dynamically based on environment
-        # Uses production URL on Streamlit Cloud, falls back to localhost locally
         redirect_uri = os.getenv("REDIRECT_URI", "https://email-responder-ai.streamlit.app/")
         
         try:
