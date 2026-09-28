@@ -132,13 +132,13 @@ def get_gmail_service():
     )
     return build("gmail", "v1", credentials=creds)
 
-def fetch_unread_emails(max_results=5):
-    """Fetches latest unread emails from Gmail inbox."""
+def fetch_gmail_emails(max_results=10, folder_query='is:unread'):
+    """Fetches emails from Gmail based on query filters and count limit."""
     service = get_gmail_service()
     if not service:
         return []
     
-    results = service.users().messages().list(userId='me', q='is:unread', maxResults=max_results).execute()
+    results = service.users().messages().list(userId='me', q=folder_query, maxResults=max_results).execute()
     messages = results.get('messages', [])
     
     email_list = []
@@ -228,13 +228,40 @@ else:
     st.title("📥 AI Email Inbox & Direct Send Assistant")
     st.caption(f"Connected Account: **{st.session_state['user_email']}**")
     
-    # Quick Inbox Fetch Button
-    st.markdown("### 📬 Unread Gmail Messages")
-    if st.button("🔄 Fetch Unread Emails from Gmail"):
+    # ---------------------------------------------------------
+    # Inbox View & Custom Fetch Controls
+    # ---------------------------------------------------------
+    st.markdown("### 📬 Gmail Inbox Explorer")
+    
+    col_folder, col_count, col_btn = st.columns([2, 1, 1])
+    
+    with col_folder:
+        inbox_filter = st.selectbox(
+            "Select Mail View / Category:",
+            ["Unread Emails (`is:unread`)", "Important Emails (`is:important`)", "Starred Emails (`is:starred`)", "All Recent Emails (`in:inbox`)"]
+        )
+        
+        query_map = {
+            "Unread Emails (`is:unread`)": "is:unread",
+            "Important Emails (`is:important`)": "is:important",
+            "Starred Emails (`is:starred`)": "is:starred",
+            "All Recent Emails (`in:inbox`)": "in:inbox"
+        }
+        selected_query = query_map[inbox_filter]
+
+    with col_count:
+        fetch_limit = st.selectbox("Max Emails to Fetch:", [5, 10, 15, 20], index=1)
+
+    with col_btn:
+        st.write("") # Spacer for vertical alignment
+        st.write("")
+        fetch_clicked = st.button("🔄 Sync Emails", use_container_width=True)
+
+    if fetch_clicked:
         with st.spinner("Connecting to Gmail API..."):
             try:
-                st.session_state["unread_emails"] = fetch_unread_emails(5)
-                st.success(f"Fetched {len(st.session_state['unread_emails'])} unread message(s).")
+                st.session_state["unread_emails"] = fetch_gmail_emails(max_results=fetch_limit, folder_query=selected_query)
+                st.success(f"Fetched {len(st.session_state['unread_emails'])} email(s).")
             except Exception as e:
                 st.error(f"Failed to fetch emails: {e}")
                 
@@ -330,7 +357,6 @@ else:
                 else:
                     with st.spinner("Sending email via Gmail API..."):
                         try:
-                            # Extract subject line if present in draft
                             subject_line = f"Re: {incoming_subject}" if incoming_subject else "AI Assistant Response"
                             success = send_gmail_message(send_to_email, subject_line, draft_text)
                             if success:
